@@ -1,0 +1,101 @@
+[
+  {
+    "sel": 1,
+    "D": true,
+    "C": true,
+    "E": false,
+    "c": true,
+    "e": true,
+    "K": false
+  },
+  {
+    "sel": 2,
+    "D": false,
+    "C": true,
+    "E": false,
+    "c": true,
+    "e": false,
+    "K": false
+  },
+  {
+    "sel": 3,
+    "D": true,
+    "C": false,
+    "E": true,
+    "c": false,
+    "e": true,
+    "K": true
+  },
+  {
+    "sel": 4,
+    "D": false,
+    "C": false,
+    "E": true,
+    "c": true,
+    "e": true,
+    "K": false
+  },
+  {
+    "sel": 5,
+    "D": true,
+    "C": true,
+    "E": true,
+    "c": false,
+    "e": false,
+    "K": false
+  },
+  {
+    "sel": 6,
+    "D": false,
+    "C": true,
+    "E": false,
+    "c": false,
+    "e": true,
+    "K": true
+  },
+  {
+    "sel": 7,
+    "D": true,
+    "C": false,
+    "E": false,
+    "c": true,
+    "e": true,
+    "K": false
+  },
+  {
+    "sel": 8,
+    "D": false,
+    "C": false,
+    "E": true,
+    "c": true,
+    "e": false,
+    "K": false
+  },
+  {
+    "sel": 9,
+    "D": true,
+    "C": true,
+    "E": true,
+    "c": false,
+    "e": true,
+    "K": false
+  },
+  {
+    "sel": 10,
+    "D": false,
+    "C": false,
+    "E": false,
+    "c": true,
+    "e": true,
+    "K": true
+  },
+  {
+    "sel": 11,
+    "D": true,
+    "C": false,
+    "E": true,
+    "c": false,
+    "e": false,
+    "K": false
+  }
+]
