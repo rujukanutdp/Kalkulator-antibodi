@@ -17,7 +17,7 @@
       border-radius: 1rem;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       padding: 2rem;
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
     }
     h2 {
@@ -47,11 +47,13 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    .result {
+    .result, .history {
       margin-top: 2rem;
-      font-size: 1.1rem;
-      text-align: center;
+      font-size: 1rem;
       color: #333;
+    }
+    .history ul {
+      padding-left: 1rem;
     }
   </style>
 </head>
@@ -69,8 +71,10 @@
 
     <button onclick="hitungProbabilitas()">Hitung Probabilitas</button>
     <button onclick="eksporPDF()">Ekspor ke PDF</button>
+    <button onclick="tampilkanRiwayat()">Lihat Riwayat Hasil</button>
 
     <div class="result" id="hasil"></div>
+    <div class="history" id="riwayat"></div>
   </div>
 
   <script>
@@ -87,6 +91,8 @@
       const prob = Math.pow(freq, positif) * Math.pow(1 - freq, negatif);
       const persen = (prob * 100).toFixed(4);
 
+      const hasilText = `Probabilitas: ${persen}% — ${prob < 0.05 ? 'Signifikan' : 'Kemungkinan kebetulan'}`;
+
       document.getElementById('hasil').innerHTML = `
         <div id="hasilTeks">
           <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
@@ -94,6 +100,35 @@
           ${prob < 0.05 ? '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' : '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>'}
         </div>
       `;
+
+      simpanKeLocalStorage(positif, negatif, freq, persen);
+    }
+
+    function simpanKeLocalStorage(p, n, f, persentase) {
+      const riwayat = JSON.parse(localStorage.getItem('riwayatAntibodi')) || [];
+      const entriBaru = {
+        tanggal: new Date().toLocaleString(),
+        positif: p,
+        negatif: n,
+        frekuensi: f,
+        probabilitas: persentase
+      };
+      riwayat.unshift(entriBaru);
+      localStorage.setItem('riwayatAntibodi', JSON.stringify(riwayat));
+    }
+
+    function tampilkanRiwayat() {
+      const riwayat = JSON.parse(localStorage.getItem('riwayatAntibodi')) || [];
+      let html = '<h3>Riwayat Perhitungan:</h3><ul>';
+      if (riwayat.length === 0) {
+        html += '<li>Belum ada data.</li>';
+      } else {
+        riwayat.forEach(item => {
+          html += `<li>[${item.tanggal}] Reaktif: ${item.positif}, Non-reaktif: ${item.negatif}, Frek: ${item.frekuensi}, Prob: ${item.probabilitas}%</li>`;
+        });
+      }
+      html += '</ul>';
+      document.getElementById('riwayat').innerHTML = html;
     }
 
     async function eksporPDF() {
