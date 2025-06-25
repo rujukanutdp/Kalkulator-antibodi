@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Probabilitas Antibodi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4fa;
+      padding: 2rem;
+    }
+    .card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 500px;
+      margin: auto;
+    }
+    h2 {
+      text-align: center;
+      color: #3a7ca5;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      width: 100%;
+      background-color: #3a7ca5;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      text-align: center;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Kalkulator Probabilitas Antibodi</h2>
+    <label for="positif">Jumlah Sel Reaktif (+)</label>
+    <input type="number" id="positif" min="0" value="3">
+
+    <label for="negatif">Jumlah Sel Non-Reaktif (-)</label>
+    <input type="number" id="negatif" min="0" value="3">
+
+    <label for="freq">Frekuensi Antigen (0 - 1)</label>
+    <input type="number" id="freq" step="0.01" min="0" max="1" value="0.7">
+
+    <button onclick="hitungProbabilitas()">Hitung Probabilitas</button>
+
+    <div class="result" id="hasil"></div>
+  </div>
+
+  <script>
+    function hitungProbabilitas() {
+      const positif = parseInt(document.getElementById('positif').value);
+      const negatif = parseInt(document.getElementById('negatif').value);
+      const freq = parseFloat(document.getElementById('freq').value);
+
+      if (isNaN(positif) || isNaN(negatif) || isNaN(freq)) {
+        document.getElementById('hasil').innerText = 'Harap isi semua input dengan benar.';
+        return;
+      }
+
+      const prob = Math.pow(freq, positif) * Math.pow(1 - freq, negatif);
+      const persen = (prob * 100).toFixed(4);
+
+      document.getElementById('hasil').innerHTML = `
+        <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
+        ${persen}%<br><br>
+        ${prob < 0.05 ? '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' : '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>'}
+      `;
+    }
+  </script>
+</body>
+</html>
