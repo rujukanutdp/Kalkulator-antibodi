@@ -2,16 +2,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kalkulator Probabilitas Antibodi</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f4fa;
-      padding: 2rem;
-    }
+    body { font-family: Arial, sans-serif; background: #f0f4fa; padding: 2rem; }
     .card {
       background: white;
       border-radius: 1rem;
@@ -20,15 +16,8 @@
       max-width: 600px;
       margin: auto;
     }
-    h2 {
-      text-align: center;
-      color: #3a7ca5;
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
+    h2 { text-align: center; color: #3a7ca5; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
     input {
       width: 100%;
       padding: 0.5rem;
@@ -52,22 +41,21 @@
       font-size: 1rem;
       color: #333;
     }
-    .history ul {
-      padding-left: 1rem;
-    }
+    .history ul { padding-left: 1rem; }
+    .warning { color: #d32f2f; font-weight: bold; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>Kalkulator Probabilitas Antibodi</h2>
     <label for="positif">Jumlah Sel Reaktif (+)</label>
-    <input type="number" id="positif" min="0" value="3">
+    <input type="number" id="positif" min="0" value="3" />
 
     <label for="negatif">Jumlah Sel Non-Reaktif (-)</label>
-    <input type="number" id="negatif" min="0" value="3">
+    <input type="number" id="negatif" min="0" value="3" />
 
     <label for="freq">Frekuensi Antigen (0 - 1)</label>
-    <input type="number" id="freq" step="0.01" min="0" max="1" value="0.7">
+    <input type="number" id="freq" step="0.01" min="0" max="1" value="0.7" />
 
     <button onclick="hitungProbabilitas()">Hitung Probabilitas</button>
     <button onclick="eksporPDF()">Ekspor ke PDF</button>
@@ -91,13 +79,21 @@
       const prob = Math.pow(freq, positif) * Math.pow(1 - freq, negatif);
       const persen = (prob * 100).toFixed(4);
 
-      const hasilText = `Probabilitas: ${persen}% — ${prob < 0.05 ? 'Signifikan' : 'Kemungkinan kebetulan'}`;
+      let interpretasi = prob < 0.05 ?
+        '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' :
+        '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>';
+
+      let warning = '';
+      if (prob < 0.01 && positif > 6) {
+        warning = '<div class="warning">⚠️ Pola ini mungkin melibatkan lebih dari satu antibodi.</div>';
+      }
 
       document.getElementById('hasil').innerHTML = `
         <div id="hasilTeks">
           <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
           ${persen}%<br><br>
-          ${prob < 0.05 ? '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' : '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>'}
+          ${interpretasi}
+          ${warning}
         </div>
       `;
 
