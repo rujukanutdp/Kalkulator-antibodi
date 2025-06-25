@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kalkulator Probabilitas Antibodi</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -36,7 +37,7 @@
       border-radius: 0.5rem;
     }
     button {
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       padding: 0.75rem;
       width: 100%;
       background-color: #3a7ca5;
@@ -67,6 +68,7 @@
     <input type="number" id="freq" step="0.01" min="0" max="1" value="0.7">
 
     <button onclick="hitungProbabilitas()">Hitung Probabilitas</button>
+    <button onclick="eksporPDF()">Ekspor ke PDF</button>
 
     <div class="result" id="hasil"></div>
   </div>
@@ -86,10 +88,31 @@
       const persen = (prob * 100).toFixed(4);
 
       document.getElementById('hasil').innerHTML = `
-        <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
-        ${persen}%<br><br>
-        ${prob < 0.05 ? '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' : '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>'}
+        <div id="hasilTeks">
+          <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
+          ${persen}%<br><br>
+          ${prob < 0.05 ? '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' : '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>'}
+        </div>
       `;
+    }
+
+    async function eksporPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const positif = document.getElementById('positif').value;
+      const negatif = document.getElementById('negatif').value;
+      const freq = document.getElementById('freq').value;
+      const hasilText = document.getElementById('hasilTeks')?.innerText || 'Belum ada hasil perhitungan.';
+
+      doc.text("Hasil Perhitungan Probabilitas Antibodi", 10, 10);
+      doc.text(`Jumlah Sel Reaktif (+): ${positif}`, 10, 20);
+      doc.text(`Jumlah Sel Non-Reaktif (-): ${negatif}`, 10, 30);
+      doc.text(`Frekuensi Antigen: ${freq}`, 10, 40);
+      doc.text("Hasil: ", 10, 50);
+      doc.text(hasilText, 10, 60);
+
+      doc.save("hasil-probabilitas-antibodi.pdf");
     }
   </script>
 </body>
