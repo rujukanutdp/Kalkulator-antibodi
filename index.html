@@ -2,9 +2,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kalkulator Identifikasi Antibodi</title>
+  <title>Kalkulator Identifikasi Antibodi Komplit</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background: #f0f4fa; padding: 2rem; }
     .card {
@@ -12,22 +13,18 @@
       border-radius: 1rem;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       padding: 2rem;
-      max-width: 700px;
+      max-width: 750px;
       margin: auto;
     }
     h2 { text-align: center; color: #3a7ca5; }
-    .reaktivitas { margin-top: 1rem; }
-    .reaktivitas label { margin-right: 1rem; }
-    table {
-      border-collapse: collapse;
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    input, select {
       width: 100%;
-      margin-top: 1rem;
-    }
-    table, th, td {
+      padding: 0.5rem;
+      margin-top: 0.5rem;
       border: 1px solid #ccc;
-      text-align: center;
+      border-radius: 0.5rem;
     }
-    th, td { padding: 0.5rem; }
     button {
       margin-top: 1rem;
       padding: 0.75rem;
@@ -39,19 +36,38 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    .result { margin-top: 2rem; font-size: 1rem; color: #333; }
+    .result, .history, .panel { margin-top: 2rem; font-size: 1rem; color: #333; }
+    .history ul { padding-left: 1rem; }
+    .warning { color: #d32f2f; font-weight: bold; margin-top: 1rem; }
     .antibodi { font-weight: bold; color: #2e7d32; margin-top: 1rem; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>Deteksi Antibodi Berdasarkan Panel</h2>
-    <p>Masukkan reaktivitas (reaktif/non-reaktif) untuk 11 sel:</p>
-    <div class="reaktivitas" id="inputReaktif">
-      <!-- JS akan mengisi di sini -->
-    </div>
-    <button onclick="deteksiAntibodi()">Deteksi Kemungkinan Antibodi</button>
+    <h2>Kalkulator Identifikasi Antibodi (Komplit)</h2>
+
+    <label for="positif">Jumlah Sel Reaktif (+)</label>
+    <input type="number" id="positif" min="0" value="3" />
+
+    <label for="negatif">Jumlah Sel Non-Reaktif (-)</label>
+    <input type="number" id="negatif" min="0" value="3" />
+
+    <label for="freq">Frekuensi Antigen (0 - 1)</label>
+    <input type="number" id="freq" step="0.01" min="0" max="1" value="0.7" />
+
+    <button onclick="hitungProbabilitas()">Hitung Probabilitas</button>
+    <button onclick="eksporPDF()">Ekspor ke PDF</button>
+    <button onclick="tampilkanRiwayat()">Lihat Riwayat</button>
+
     <div class="result" id="hasil"></div>
+    <div class="history" id="riwayat"></div>
+
+    <hr />
+    <h3>Input Reaktivitas Sel Panel</h3>
+    <p>Checklist sel yang reaktif:</p>
+    <div class="panel" id="inputReaktif"></div>
+    <button onclick="deteksiAntibodi()">Deteksi Kemungkinan Antibodi</button>
+    <div class="result" id="hasilAntibodi"></div>
   </div>
 
   <script>
@@ -59,7 +75,7 @@
     const antigenTarget = ['D', 'C', 'E', 'c', 'e', 'K'];
     let panelAntigen = [];
 
-    // Buat checkbox input
+    // Buat input checkbox sel
     const inputDiv = document.getElementById("inputReaktif");
     for (let i = 1; i <= jumlahSel; i++) {
       const label = document.createElement("label");
@@ -67,28 +83,74 @@
       inputDiv.appendChild(label);
     }
 
-    // Ambil file JSON panel
+    // Ambil panel JSON
     fetch("panel-antigen.json")
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => panelAntigen = data)
-      .catch(err => {
-        document.getElementById("hasil").innerHTML = "Gagal memuat panel-antigen.json";
+      .catch(() => document.getElementById("hasilAntibodi").innerText = "Gagal muat panel-antigen.json");
+
+    function hitungProbabilitas() {
+      const positif = parseInt(document.getElementById('positif').value);
+      const negatif = parseInt(document.getElementById('negatif').value);
+      const freq = parseFloat(document.getElementById('freq').value);
+      if (isNaN(positif) || isNaN(negatif) || isNaN(freq)) return;
+
+      const prob = Math.pow(freq, positif) * Math.pow(1 - freq, negatif);
+      const persen = (prob * 100).toFixed(4);
+
+      let interpretasi = prob < 0.05 ?
+        '<span style="color: green;">Kemungkinan antibodi ini signifikan secara statistik.</span>' :
+        '<span style="color: red;">Pola ini masih mungkin terjadi secara kebetulan.</span>';
+
+      let warning = '';
+      if (prob < 0.01 && positif > 6) {
+        warning = '<div class="warning">⚠️ Pola ini mungkin melibatkan lebih dari satu antibodi.</div>';
+      }
+
+      document.getElementById('hasil').innerHTML = `
+        <div id="hasilTeks">
+          <strong>Probabilitas pola ini terjadi secara kebetulan:</strong><br>
+          ${persen}%<br><br>
+          ${interpretasi}
+          ${warning}
+        </div>
+      `;
+
+      simpanKeLocalStorage(positif, negatif, freq, persen);
+    }
+
+    function simpanKeLocalStorage(p, n, f, persentase) {
+      const riwayat = JSON.parse(localStorage.getItem('riwayatAntibodi')) || [];
+      riwayat.unshift({ tanggal: new Date().toLocaleString(), positif: p, negatif: n, frekuensi: f, probabilitas: persentase });
+      localStorage.setItem('riwayatAntibodi', JSON.stringify(riwayat));
+    }
+
+    function tampilkanRiwayat() {
+      const riwayat = JSON.parse(localStorage.getItem('riwayatAntibodi')) || [];
+      let html = '<h3>Riwayat Perhitungan:</h3><ul>';
+      riwayat.forEach(item => {
+        html += `<li>[${item.tanggal}] +: ${item.positif}, –: ${item.negatif}, Frek: ${item.frekuensi}, Prob: ${item.probabilitas}%</li>`;
       });
+      html += '</ul>';
+      document.getElementById('riwayat').innerHTML = html;
+    }
+
+    function eksporPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const hasilText = document.getElementById('hasilTeks')?.innerText || 'Belum ada hasil.';
+      doc.text("Hasil Perhitungan Probabilitas Antibodi", 10, 10);
+      doc.text(hasilText, 10, 20);
+      doc.save("hasil-probabilitas-antibodi.pdf");
+    }
 
     function deteksiAntibodi() {
-      if (!panelAntigen || panelAntigen.length === 0) {
-        document.getElementById("hasil").innerText = "Panel antigen belum termuat.";
-        return;
-      }
-
+      if (!panelAntigen || panelAntigen.length === 0) return;
       const polaReaktif = {};
-      for (let ag of antigenTarget) {
-        polaReaktif[ag] = { reaktif: 0, nonreaktif: 0 };
-      }
+      for (let ag of antigenTarget) polaReaktif[ag] = { reaktif: 0, nonreaktif: 0 };
 
       for (let i = 0; i < jumlahSel; i++) {
-        const selId = `sel${i + 1}`;
-        const reaktif = document.getElementById(selId).checked;
+        const reaktif = document.getElementById(`sel${i + 1}`).checked;
         const antigen = panelAntigen[i];
         for (let ag of antigenTarget) {
           if (antigen[ag]) {
@@ -98,20 +160,14 @@
         }
       }
 
-      // Analisis: jika hanya reaktif pada semua antigen positif untuk ag X → kemungkinan anti-X
       const kandidat = [];
       for (let ag of antigenTarget) {
-        if (polaReaktif[ag].reaktif > 0 && polaReaktif[ag].nonreaktif === 0) {
-          kandidat.push(ag);
-        }
+        if (polaReaktif[ag].reaktif > 0 && polaReaktif[ag].nonreaktif === 0) kandidat.push(ag);
       }
 
-      const hasilDiv = document.getElementById("hasil");
-      if (kandidat.length > 0) {
-        hasilDiv.innerHTML = `<div class="antibodi">Kemungkinan antibodi: anti-${kandidat.join(", anti-")}</div>`;
-      } else {
-        hasilDiv.innerHTML = "Tidak ada kecocokan spesifik dengan antigen panel.";
-      }
+      document.getElementById('hasilAntibodi').innerHTML = kandidat.length > 0
+        ? `<div class="antibodi">Kemungkinan antibodi: anti-${kandidat.join(", anti-")}</div>`
+        : "Tidak ada kecocokan spesifik dengan panel.";
     }
   </script>
 </body>
